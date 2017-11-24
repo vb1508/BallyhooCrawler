@@ -7,6 +7,7 @@ import android.location.Address;
 import android.location.Geocoder;
 
 import com.app.ballyhoo.crawler.main.Shout;
+import com.app.ballyhoo.crawler.main.Util;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
@@ -45,40 +46,60 @@ public abstract class AbstractModule extends Observable {
 
     public String getModuleName() { return moduleName; }
 
-    Task<Map<LocalDate, Set<Shout>>> startParsing(String city, final LocalDate startDate, final LocalDate endDate) {
-        maxProgress = 0;
+    public int getMaxProgress() {
+        return maxProgress;
+    }
+
+    public Task<Map<LocalDate, Set<Shout>>> parseHelper(String city, LocalDate start, LocalDate end, final Set<String> crawled) {
+        maxProgress = 1;
 
         final TaskCompletionSource<Map<LocalDate, Set<Shout>>> tcs = new TaskCompletionSource<>();
-        final Collection<Task<Map<LocalDate, Set<Shout>>>> tasks = new HashSet<>();
 
-        for (LocalDate i = startDate; !i.isAfter(endDate); i = i.plusDays(1)) {
-            final TaskCompletionSource<Map<LocalDate, Set<Shout>>> task = new TaskCompletionSource<>();
-            parseHelper(city, i).addOnSuccessListener(new OnSuccessListener<Map<LocalDate, Set<Shout>>>() {
-                @Override
-                public void onSuccess(Map<LocalDate, Set<Shout>> shouts) {
-                    task.setResult(shouts);
-                }
-            });
-            tasks.add(task.getTask());
+        final Collection<Task<Set<String>>> tasks = new HashSet<>();
+        for (LocalDate date = start; !date.isAfter(end); date = date.plusDays(1)) {
+            TaskCompletionSource<Set<String>> temp = new TaskCompletionSource<>();
+            String childUrl = getURL(city, date);
+            new ParseChildURLsThread(temp, childUrl).start();
+            tasks.add(temp.getTask());
         }
+
         Tasks.whenAll(tasks).addOnSuccessListener(new OnSuccessListener<Void>() {
             @Override
             public void onSuccess(Void aVoid) {
-                Map<LocalDate, Set<Shout>> result = new HashMap<>();
-                for (Task<Map<LocalDate, Set<Shout>>> task: tasks) {
-                    for (Map.Entry<LocalDate, Set<Shout>> e: task.getResult().entrySet()) {
-                        LocalDate date = e.getKey();
-                        if (!date.isBefore(startDate) && !date.isAfter(endDate))
-                            for (Shout s: e.getValue()) {
-                                if (result.get(date) == null)
-                                    result.put(date, new HashSet<Shout>());
-                                result.get(date).add(s);
-                            }
-                    }
+                Set<String> hrefs = new HashSet<>();
+                for (Task<Set<String>> task: tasks) {
+                    if (task.getResult() != null && !task.getResult().isEmpty())
+                        hrefs.addAll(task.getResult());
                 }
-                tcs.setResult(result);
+                hrefs.removeAll(crawled);
+
+                maxProgress = hrefs.size();
+                final Collection<Task<Set<Shout>>> crawlChildrenTasks = new HashSet<>();
+                for (String href: hrefs) {
+                    TaskCompletionSource<Set<Shout>> temp = new TaskCompletionSource<>();
+                    new ParseChildThread(temp, href).start();
+                    crawlChildrenTasks.add(temp.getTask());
+                }
+                Tasks.whenAll(crawlChildrenTasks).addOnSuccessListener(new OnSuccessListener<Void>() {
+                    @Override
+                    public void onSuccess(Void aVoid) {
+                        Map<LocalDate, Set<Shout>> result = new HashMap<>();
+                        for (Task<Set<Shout>> task: crawlChildrenTasks) {
+                            if (task.getResult() != null && task.isSuccessful())
+                                for (Shout s: task.getResult()) {
+                                    if (s != null && s.isValid()) {
+                                        if (result.get(s.getStartDate().toLocalDate()) == null)
+                                            result.put(s.getStartDate().toLocalDate(), new HashSet<Shout>());
+                                        result.get(s.getStartDate().toLocalDate()).add(s);
+                                    }
+                                }
+                        }
+                        tcs.setResult(result);
+                    }
+                });
             }
         });
+
         return tcs.getTask();
     }
 
@@ -86,16 +107,12 @@ public abstract class AbstractModule extends Observable {
         Address result = null;
         try {
             Geocoder coder = new Geocoder(context);
-            List<Address> addresses = coder.getFromLocationName(strAddress,5);
+            List<Address> addresses = coder.getFromLocationName(Util.clean(strAddress),5);
             result = addresses.get(0);
         } catch (IOException e) {
             e.printStackTrace();
         }
         return result;
-    }
-
-    int getMaxProgress() {
-        return maxProgress;
     }
 
     Bitmap downloadImage(String URL) {
@@ -113,9 +130,9 @@ public abstract class AbstractModule extends Observable {
 
     protected abstract String getURL(String city, LocalDate date);
 
-    protected abstract Collection<String> parseChildURLs(String url) throws IOException;
+    protected abstract Set<String> parseChildURLs(String url) throws IOException;
 
-    protected abstract Shout parseChild(String url) throws IOException, JSONException;
+    protected abstract Set<Shout> parseShouts(String url) throws IOException, JSONException;
 
     private InputStream openHttpConnection(String urlString) throws IOException {
         InputStream in = null;
@@ -143,77 +160,47 @@ public abstract class AbstractModule extends Observable {
         return in;
     }
 
-    private Task<Map<LocalDate, Set<Shout>>> parseHelper(String city, LocalDate date) {
-        TaskCompletionSource<Map<LocalDate, Set<Shout>>> tcs = new TaskCompletionSource<>();
-        String childUrl = getURL(city, date);
-
-        new ParseChildURLsThread(tcs, childUrl).start();
-        return tcs.getTask();
-    }
-
     private class ParseChildURLsThread extends Thread {
-        TaskCompletionSource<Map<LocalDate, Set<Shout>>> tcs;
+        TaskCompletionSource<Set<String>> tcs;
         String url;
 
-        public ParseChildURLsThread(TaskCompletionSource<Map<LocalDate, Set<Shout>>> tcs, String url) {
+        public ParseChildURLsThread(TaskCompletionSource<Set<String>> tcs, String url) {
             this.tcs = tcs;
             this.url = url;
         }
 
         @Override
         public void run() {
-            Collection<String> result = new HashSet<>();
+            Set<String> result = new HashSet<>();
             try {
                 result = parseChildURLs(url);
             } catch (IOException e) {
                 e.printStackTrace();
             }
-            maxProgress += result.size();
-
-            final Collection<Task<Shout>> tasks = new HashSet<>();
-            for (String href: result) {
-                TaskCompletionSource<Shout> temp = new TaskCompletionSource<>();
-                new ParseChildThread(temp, href).start();
-                tasks.add(temp.getTask());
-            }
-            Tasks.whenAll(tasks).addOnSuccessListener(new OnSuccessListener<Void>() {
-                @Override
-                public void onSuccess(Void aVoid) {
-                    Map<LocalDate, Set<Shout>> result = new HashMap<>();
-                    for (Task<Shout> task: tasks) {
-                        Shout s = task.getResult();
-                        if (s != null) {
-                            if (result.get(s.getStartDate().toLocalDate()) == null)
-                                result.put(s.getStartDate().toLocalDate(), new HashSet<Shout>());
-                            result.get(s.getStartDate().toLocalDate()).add(s);
-                        }
-                    }
-                    tcs.setResult(result);
-                }
-            });
+            tcs.setResult(result);
         }
     }
 
     private class ParseChildThread extends Thread {
-        TaskCompletionSource<Shout> tcs;
+        TaskCompletionSource<Set<Shout>> tcs;
         String url;
 
-        ParseChildThread(TaskCompletionSource<Shout> tcs, String url) {
+        ParseChildThread(TaskCompletionSource<Set<Shout>> tcs, String url) {
             this.tcs = tcs;
             this.url = url;
         }
 
         @Override
         public void run() {
-            Shout result = null;
+            Set<Shout> result = null;
             try {
-                result = parseChild(url);
+                result = parseShouts(url);
             } catch (Exception e) {
                 e.printStackTrace();
             }
             // progress bar
             setChanged();
-            notifyObservers();
+            notifyObservers(1);
 
             tcs.setResult(result);
         }

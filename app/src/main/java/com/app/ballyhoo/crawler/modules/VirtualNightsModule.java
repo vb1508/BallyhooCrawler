@@ -30,7 +30,7 @@ import java.util.Set;
 public class VirtualNightsModule extends AbstractModule {
     private final String URL = "http://www.virtualnights.com";
 
-    VirtualNightsModule(Context context) {
+    public VirtualNightsModule(Context context) {
         super(context, "virtualnights");
     }
 
@@ -41,8 +41,8 @@ public class VirtualNightsModule extends AbstractModule {
     }
 
     @Override
-    protected Collection<String> parseChildURLs(String url) throws IOException {
-        Collection<String> result = new HashSet<>();
+    protected Set<String> parseChildURLs(String url) throws IOException {
+        Set<String> result = new HashSet<>();
 
         Document doc = Jsoup.connect(url).get();
         Elements listings = doc.getElementsByAttributeValue("id", "eventlisting");
@@ -58,7 +58,7 @@ public class VirtualNightsModule extends AbstractModule {
     }
 
     @Override
-    protected Shout parseChild(String url) throws IOException, JSONException {
+    protected Set<Shout> parseShouts(String url) throws IOException, JSONException {
         Document doc = Jsoup.connect(url).get();
         Elements header = doc.getElementsByAttributeValue("type", "application/ld+json");
 
@@ -74,10 +74,10 @@ public class VirtualNightsModule extends AbstractModule {
         Set<Util.ShoutCategory> categories = new HashSet<>();
         categories.add(Util.ShoutCategory.NIGHTLIFE);
         Address address = parseLocationFromAddress(json.getJSONObject("location").getString("address"));
+        String message = doc.getElementsByAttributeValue("class", "event-description").html();
 
-        Elements body = doc.getElementsByAttributeValue("class", "event-description");
-        assert body.size() == 1;
-        String message = Util.clean(body.html());
-        return new Shout(url, VirtualNightsModule.this, categories, title, message, startDate, endDate, address, images);
+        Set<Shout> result = new HashSet<>();
+        result.add(new Shout(url, VirtualNightsModule.this, categories, title, message, startDate, endDate, address, images));
+        return result;
     }
 }

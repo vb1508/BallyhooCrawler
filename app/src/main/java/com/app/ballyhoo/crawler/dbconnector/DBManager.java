@@ -47,43 +47,24 @@ public class DBManager {
     private final String SHOUTS_DBREF = "shouts";
     private final String IMAGES_DBREF = "images";
 
-    public Task<Map<LocalDate, Set<String>>> init(LocalDate start, LocalDate end) {
-        final TaskCompletionSource<Map<LocalDate, Set<String>>> tcs = new TaskCompletionSource<>();
-        final Map<LocalDate, Set<String>> result = new HashMap<>();
+    public Task<Set<String>> init() {
+        final TaskCompletionSource<Set<String>> tcs = new TaskCompletionSource<>();
         DatabaseReference dbRef = FirebaseDatabase.getInstance().getReference();
 
-        final Collection<Task<Pair<LocalDate, HashSet<String>>>> tasks = new HashSet<>();
-        for (LocalDate i = start; !i.isAfter(end); i = i.plusDays(1)) {
-            final TaskCompletionSource<Pair<LocalDate, HashSet<String>>> task = new TaskCompletionSource<>();
-            final Pair<LocalDate, HashSet<String>> crawledModules = new Pair<>(i, new HashSet<String>());
-
-            String dateRef = getDateRef(i);
-            dbRef.child(CRAWLER_DBREF).child(dateRef).addListenerForSingleValueEvent(new ValueEventListener() {
-                @Override
-                public void onDataChange(DataSnapshot dataSnapshot) {
-                    for (DataSnapshot snapshot: dataSnapshot.getChildren()) {
-                        for (DataSnapshot snapshot1: snapshot.getChildren())
-                            crawledModules.second.add(snapshot1.getValue(String.class));
-                    }
-                    task.setResult(crawledModules);
-                }
-
-                @Override
-                public void onCancelled(DatabaseError databaseError) {
-
-                }
-            });
-            tasks.add(task.getTask());
-        }
-        Tasks.whenAll(tasks).addOnSuccessListener(new OnSuccessListener<Void>() {
+        dbRef.child(CRAWLER_DBREF).addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
-            public void onSuccess(Void aVoid) {
-                for (Task<Pair<LocalDate, HashSet<String>>> task: tasks) {
-                    if (result.get(task.getResult().first) == null)
-                        result.put(task.getResult().first, new HashSet<String>());
-                    result.get(task.getResult().first).addAll(task.getResult().second);
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                Set<String> crawledSites = new HashSet<>();
+                for (DataSnapshot snapshot: dataSnapshot.getChildren()) {
+                    for (DataSnapshot snapshot1: snapshot.getChildren())
+                        crawledSites.add(snapshot1.getValue(String.class));
                 }
-                tcs.setResult(result);
+                tcs.setResult(crawledSites);
+            }
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+
             }
         });
         return tcs.getTask();
@@ -102,7 +83,7 @@ public class DBManager {
         LocalDateTime from = shout.getStartDate();
         LocalDateTime until = shout.getEndDate();
 
-        if (categories != null && !categories.isEmpty() && message != null && !message.isEmpty()
+        if (categories != null && !categories.isEmpty() && title != null && message != null
                 && images != null && address != null && from != null && until != null) {
 
             DatabaseReference dbRef = FirebaseDatabase.getInstance().getReference();
@@ -119,7 +100,8 @@ public class DBManager {
             while (imgNames.size() < images.size()) {
                 imgNames.add(UUID.randomUUID().toString());
             }
-            tasks.addAll(addShoutImagesTask(opID, sRef.getKey(), imgNames, images, "shout_images"));
+            shout.setSRef(sID);
+            shout.setImgNames(imgNames);
 
             final long timestamp = System.currentTimeMillis();
             FBShout fbShout = new FBShout(timestamp, Util.ShoutStatus.ACTIVE, opID, opName, imgNames,
@@ -135,16 +117,13 @@ public class DBManager {
             FBProfileShoutRef dateLocRef = new FBProfileShoutRef(Util.ShoutType.LOCAL, dateRef, locRef);
             tasks.add(myShoutsRef.child(sID).setValue(dateLocRef));
 
-            DatabaseReference crawlerRef = dbRef.child(CRAWLER_DBREF).child(dateRef).child(shout.getModule().getModuleName()).push();
+            DatabaseReference crawlerRef = dbRef.child(CRAWLER_DBREF).child(shout.getModule().getModuleName()).push();
             tasks.add(crawlerRef.setValue(shout.getId()));
 
             Tasks.whenAll(tasks).addOnCompleteListener(new OnCompleteListener<Void>() {
                 @Override
                 public void onComplete(@NonNull Task<Void> task) {
-                    if (task.isSuccessful()) {
-                        tcs.setResult(task.getResult());
-                    } else
-                        tcs.setException(task.getException());
+                    tcs.setResult(task.getResult());
                 }
             });
         } else
@@ -152,8 +131,15 @@ public class DBManager {
         return tcs.getTask();
     }
 
-    private Collection<UploadTask> addShoutImagesTask(String opID, String sID, List<String> imgNames, List<Bitmap> images, String... dbs) {
-        Collection<UploadTask> tasks = new ArrayList<>();
+    public Task<Void> addShoutImages(Shout s, String... dbs) {
+        final TaskCompletionSource<Void> tcs = new TaskCompletionSource<>();
+
+        String opID = FirebaseAuth.getInstance().getCurrentUser().getUid();
+        String sID = s.getSRef();
+        List<String> imgNames = s.getImgNames();
+        List<Bitmap> images = s.getImages();
+
+        final Collection<Task<UploadTask.TaskSnapshot>> tasks = new HashSet<>();
         // Create a storage reference from our app
         StorageReference storageRef = FirebaseStorage.getInstance().getReferenceFromUrl("gs://ballyhoo-78262.appspot.com");
         StorageReference imgRef = storageRef.child(IMAGES_DBREF).child(opID).child(sID);
@@ -166,9 +152,24 @@ public class DBManager {
             images.get(i).compress(Bitmap.CompressFormat.JPEG, 100, baos);
             byte[] data = baos.toByteArray();
 
-            tasks.add(imgRef.child(imgNames.get(i)).putBytes(data));
+            final TaskCompletionSource<UploadTask.TaskSnapshot> uploadTcs = new TaskCompletionSource<>();
+
+            imgRef.child(imgNames.get(i)).putBytes(data).addOnCompleteListener(new OnCompleteListener<UploadTask.TaskSnapshot>() {
+                @Override
+                public void onComplete(@NonNull Task<UploadTask.TaskSnapshot> task) {
+                    uploadTcs.setResult(task.getResult());
+                }
+            });
+            tasks.add(uploadTcs.getTask());
         }
-        return tasks;
+
+        Tasks.whenAll(tasks).addOnCompleteListener(new OnCompleteListener<Void>() {
+            @Override
+            public void onComplete(@NonNull Task<Void> task) {
+                tcs.setResult(task.getResult());
+            }
+        });
+        return tcs.getTask();
     }
 
     private String getLocRef(Address l) {
