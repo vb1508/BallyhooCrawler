@@ -89,7 +89,7 @@ public class KarlsruheDEModule extends AbstractModule {
         String message = content.getElementsByAttributeValue("class", "description").get(0).html();
         DateTime startDate = DateTime.parse(content.getElementsByAttributeValue("class", "dtstart").get(0).attr("title"));
         DateTime endDate;
-        String endDateStr = content.getElementsByAttributeValue("class", "dtstart").get(0).attr("title");
+        String endDateStr = content.getElementsByAttributeValue("class", "dtend").get(0).attr("title");
         if (endDateStr == null || endDateStr.isEmpty()) {
             endDate = null;
         } else

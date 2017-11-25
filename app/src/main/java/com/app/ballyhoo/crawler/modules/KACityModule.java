@@ -45,11 +45,15 @@ public class KACityModule extends AbstractModule {
         Set<String> result = new HashSet<>();
         Document doc = Jsoup.connect(url).get();
 
+        String[] temp = url.split("/");
+        String suffix = "cal/" + temp[temp.length-3] + "/" + temp[temp.length-2]
+                + "/" + temp[temp.length-1];
+
         Elements listings = doc.getElementsByAttributeValue("class", "default_catheader_allday");
 
         for (Element element: listings) {
             Element href = element.getElementsByAttribute("href").get(0);
-            result.add(URL + href.attr("href"));
+            result.add(URL + href.attr("href") + suffix);
         }
         return result;
     }

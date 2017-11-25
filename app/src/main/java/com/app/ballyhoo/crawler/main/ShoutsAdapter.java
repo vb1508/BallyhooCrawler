@@ -62,7 +62,7 @@ public class ShoutsAdapter extends RecyclerView.Adapter<ShoutsAdapter.ShoutsView
         }
 
         void setModel(Shout shout) {
-            id.setText(shout.getId());
+            id.setText(""+shout.getId());
             time.setText(shout.getStartDate() + " " + shout.getEndDate());
             title.setText(shout.getTitle());
             description.setText(shout.getMessage());

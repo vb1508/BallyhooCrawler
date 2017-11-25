@@ -50,7 +50,7 @@ public abstract class AbstractModule extends Observable {
         return maxProgress;
     }
 
-    public Task<Map<LocalDate, Set<Shout>>> parseHelper(String city, LocalDate start, LocalDate end, final Set<String> crawled) {
+    public Task<Map<LocalDate, Set<Shout>>> parseHelper(String city, LocalDate start, LocalDate end, final Map<String, Integer> crawled) {
         maxProgress = 1;
 
         final TaskCompletionSource<Map<LocalDate, Set<Shout>>> tcs = new TaskCompletionSource<>();
@@ -71,7 +71,7 @@ public abstract class AbstractModule extends Observable {
                     if (task.getResult() != null && !task.getResult().isEmpty())
                         hrefs.addAll(task.getResult());
                 }
-                hrefs.removeAll(crawled);
+                hrefs.removeAll(crawled.keySet());
 
                 maxProgress = hrefs.size();
                 final Collection<Task<Set<Shout>>> crawlChildrenTasks = new HashSet<>();

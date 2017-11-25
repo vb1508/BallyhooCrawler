@@ -5,8 +5,6 @@ import android.content.Context;
 import android.support.annotation.NonNull;
 
 import com.app.ballyhoo.crawler.dbconnector.DBManager;
-import com.app.ballyhoo.crawler.main.Shout;
-import com.app.ballyhoo.crawler.main.ShoutsAdapter;
 import com.app.ballyhoo.crawler.modules.AbstractModule;
 import com.app.ballyhoo.crawler.modules.KACityModule;
 import com.app.ballyhoo.crawler.modules.KarlsruheDEModule;
@@ -34,7 +32,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
  */
 
 public class ModulesManager extends Thread implements Observer {
-    private int progressOffset = 0;
+    private int uploadProgress = 0;
 
     final int MAX_UPLOAD_THREADS = 2;
 
@@ -51,8 +49,8 @@ public class ModulesManager extends Thread implements Observer {
         dbManager = new DBManager();
 
         modules = new HashSet<>();
-        //modules.add(new KarlsruheDEModule(context));
-        //modules.add(new VirtualNightsModule(context));
+        modules.add(new KarlsruheDEModule(context));
+        modules.add(new VirtualNightsModule(context));
         modules.add(new KACityModule(context));
 
         for (AbstractModule module: modules)
@@ -61,9 +59,9 @@ public class ModulesManager extends Thread implements Observer {
 
     @Override
     public void run() {
-        dbManager.init().addOnSuccessListener(new OnSuccessListener<Set<String>>() {
+        dbManager.init().addOnSuccessListener(new OnSuccessListener<Map<String, Integer>>() {
             @Override
-            public void onSuccess(Set<String> crawled) {
+            public void onSuccess(final Map<String, Integer> crawled) {
                 final LocalDate startDate = LocalDate.now();
                 final LocalDate endDate = startDate.plusDays(0);
 
@@ -92,7 +90,7 @@ public class ModulesManager extends Thread implements Observer {
                                 shouts.get(d).addAll(temp.get(d));
                             }
                         }
-                        upload(shouts);
+                        upload(shouts, crawled);
                     }
                 });
             }
@@ -102,7 +100,7 @@ public class ModulesManager extends Thread implements Observer {
     @Override
     public synchronized void update(Observable observable, Object o) {
         progressDialog.show();
-        int sumProgress = 1 + progressOffset;
+        int sumProgress = 1 + uploadProgress;
         for (AbstractModule module: modules)
             sumProgress += module.getMaxProgress();
 
@@ -113,19 +111,21 @@ public class ModulesManager extends Thread implements Observer {
             progressDialog.dismiss();
     }
 
-    private void upload(Map<LocalDate, Set<Shout>> shouts) {
+    private void upload(Map<LocalDate, Set<Shout>> shouts, Map<String, Integer> crawled) {
         final Set<Shout> filtered = new HashSet<>();
         final Queue<Shout> queue = new ConcurrentLinkedQueue<>();
 
         final Collection<Task<Void>> uploadShoutsTask = new HashSet<>();
         for (Map.Entry<LocalDate, Set<Shout>> e: shouts.entrySet()) {
             for (Shout s: e.getValue()) {
-                filtered.add(s);
+                if (!crawled.containsValue(s.getId())) {
+                    filtered.add(s);
                     queue.add(s);
                     uploadShoutsTask.add(dbManager.addShout(s));
+                }
             }
         }
-        progressOffset = filtered.size();
+        uploadProgress = filtered.size();
         update(null, 0);
 
         Tasks.whenAll(uploadShoutsTask).addOnCompleteListener(new OnCompleteListener<Void>() {

@@ -26,6 +26,6 @@ public class Util {
 
         //get the HTML from the document, and retaining original new lines
         String str = jsoupDoc.html().replaceAll("\\\\n", "\n");
-        return Jsoup.clean(str, "", Whitelist.none(), new Document.OutputSettings().prettyPrint(false)).replace("&gt;", ">").replace("&amp;", "&");
+        return Jsoup.clean(str, "", Whitelist.none(), new Document.OutputSettings().prettyPrint(false)).replace("&gt;", ">").replace("&amp;", "&").replace("&nbsp;", " ");
     }
 }

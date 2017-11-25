@@ -19,10 +19,11 @@ import java.util.Set;
 
 public class Shout {
     private Set<Util.ShoutCategory> categories;
-    private String id;
+    private int id;
     private String sRef;
     private AbstractModule module;
 
+    private String url;
     private LocalDateTime startDate, endDate;
     private Address address;
     private String title;
@@ -30,8 +31,8 @@ public class Shout {
     private List<String> imgNames;
     private List<Bitmap> images;
 
-    public Shout(String id, AbstractModule module, Set<Util.ShoutCategory> categories, String title, String message, LocalDateTime startDate, LocalDateTime endDate, Address address, List<Bitmap> images) {
-        this.id = id;
+    public Shout(String url, AbstractModule module, Set<Util.ShoutCategory> categories, String title, String message, LocalDateTime startDate, LocalDateTime endDate, Address address, List<Bitmap> images) {
+        this.url = url;
         this.module = module;
 
         this.categories = categories;
@@ -46,13 +47,17 @@ public class Shout {
         this.title = Util.clean(title);
         this.message = Util.clean(message);
         this.images = images;
+
+        this.id = generateId();
     }
 
-    public Shout(String id, AbstractModule module, Set<Util.ShoutCategory> categories, String title, String message, DateTime startDate, DateTime endDate, Address address, List<Bitmap> images) {
-        this(id, module, categories, title, message, startDate.toLocalDateTime(), endDate.toLocalDateTime(), address, images);
+    public Shout(String url, AbstractModule module, Set<Util.ShoutCategory> categories, String title, String message, DateTime startDate, DateTime endDate, Address address, List<Bitmap> images) {
+        this(url, module, categories, title, message, startDate.toLocalDateTime(), endDate.toLocalDateTime(), address, images);
     }
 
-    public String getId() { return id; }
+    public int getId() { return id; }
+
+    public String getUrl() { return url; }
 
     public AbstractModule getModule() { return module; }
 
@@ -99,18 +104,22 @@ public class Shout {
     }
 
     public boolean isValid() {
-        return (id != null && categories != null && startDate != null && endDate != null
+        return (url != null && categories != null && startDate != null && endDate != null
                 && address != null && title != null && message != null && images != null);
     }
 
     @Override
     public boolean equals(Object obj) {
-        Shout s = (Shout) obj;
-        return id.equals(s.id) || message.equals(s.message);
+        return id == ((Shout) obj).id;
     }
 
     @Override
     public int hashCode() {
-        return message.hashCode();
+        return id;
+    }
+
+    int generateId() {
+        return startDate.hashCode() + endDate.hashCode() +
+                ((Double) address.getLatitude()).hashCode() + ((Double) address.getLongitude()).hashCode();
     }
 }

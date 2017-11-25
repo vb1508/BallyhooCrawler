@@ -5,6 +5,7 @@ import android.location.Address;
 import android.support.annotation.NonNull;
 import android.util.Pair;
 
+import com.app.ballyhoo.crawler.fbobjects.FBCrawlerRef;
 import com.app.ballyhoo.crawler.fbobjects.FBProfileShoutRef;
 import com.app.ballyhoo.crawler.fbobjects.FBShout;
 import com.app.ballyhoo.crawler.main.Shout;
@@ -47,17 +48,18 @@ public class DBManager {
     private final String SHOUTS_DBREF = "shouts";
     private final String IMAGES_DBREF = "images";
 
-    public Task<Set<String>> init() {
-        final TaskCompletionSource<Set<String>> tcs = new TaskCompletionSource<>();
+    public Task<Map<String, Integer>> init() {
+        final TaskCompletionSource<Map<String, Integer>> tcs = new TaskCompletionSource<>();
         DatabaseReference dbRef = FirebaseDatabase.getInstance().getReference();
 
         dbRef.child(CRAWLER_DBREF).addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
-                Set<String> crawledSites = new HashSet<>();
+                Map<String, Integer> crawledSites = new HashMap<>();
                 for (DataSnapshot snapshot: dataSnapshot.getChildren()) {
-                    for (DataSnapshot snapshot1: snapshot.getChildren())
-                        crawledSites.add(snapshot1.getValue(String.class));
+                    for (DataSnapshot snapshot1: snapshot.getChildren()) {
+                        crawledSites.put(snapshot1.child("url").getValue(String.class), snapshot1.child("id").getValue(int.class));
+                    }
                 }
                 tcs.setResult(crawledSites);
             }
@@ -118,7 +120,7 @@ public class DBManager {
             tasks.add(myShoutsRef.child(sID).setValue(dateLocRef));
 
             DatabaseReference crawlerRef = dbRef.child(CRAWLER_DBREF).child(shout.getModule().getModuleName()).push();
-            tasks.add(crawlerRef.setValue(shout.getId()));
+            tasks.add(crawlerRef.setValue(new FBCrawlerRef(shout.getId(), shout.getUrl())));
 
             Tasks.whenAll(tasks).addOnCompleteListener(new OnCompleteListener<Void>() {
                 @Override
