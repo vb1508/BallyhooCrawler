@@ -5,6 +5,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.location.Address;
 import android.location.Geocoder;
+import android.util.Pair;
 
 import com.app.ballyhoo.crawler.main.Shout;
 import com.app.ballyhoo.crawler.main.Util;
@@ -39,9 +40,13 @@ public abstract class AbstractModule extends Observable {
     private int maxProgress;
     private Context context;
 
-    AbstractModule(Context context, String moduleName) {
+    LocalDate startDate, endDate;
+
+    AbstractModule(Context context, String moduleName, LocalDate startDate, LocalDate endDate) {
         this.context = context;
         this.moduleName = moduleName;
+        this.startDate = startDate;
+        this.endDate = endDate;
     }
 
     public String getModuleName() { return moduleName; }
@@ -50,34 +55,37 @@ public abstract class AbstractModule extends Observable {
         return maxProgress;
     }
 
-    public Task<Map<LocalDate, Set<Shout>>> parseHelper(String city, LocalDate start, LocalDate end, final Map<String, Integer> crawled) {
+    public Task<Map<LocalDate, Set<Shout>>> parseHelper(String city, final Map<String, Integer> crawled) {
         maxProgress = 1;
 
         final TaskCompletionSource<Map<LocalDate, Set<Shout>>> tcs = new TaskCompletionSource<>();
 
-        final Collection<Task<Set<String>>> tasks = new HashSet<>();
-        for (LocalDate date = start; !date.isAfter(end); date = date.plusDays(1)) {
-            TaskCompletionSource<Set<String>> temp = new TaskCompletionSource<>();
-            String childUrl = getURL(city, date);
-            new ParseChildURLsThread(temp, childUrl).start();
+        final Collection<Task<Map<String, Map<String, Object>>>> tasks = new HashSet<>();
+
+        Map<String, Map<String, Object>> parentUrls = getParentURLs(city);
+        for (Map.Entry<String, Map<String, Object>> e: parentUrls.entrySet()) {
+            TaskCompletionSource<Map<String, Map<String, Object>>> temp = new TaskCompletionSource<>();
+            new ParseChildURLsThread(temp, e.getKey(), e.getValue()).start();
             tasks.add(temp.getTask());
         }
 
         Tasks.whenAll(tasks).addOnSuccessListener(new OnSuccessListener<Void>() {
             @Override
             public void onSuccess(Void aVoid) {
-                Set<String> hrefs = new HashSet<>();
-                for (Task<Set<String>> task: tasks) {
+                Map<String, Map<String, Object>> hrefs = new HashMap<>();
+                for (Task<Map<String, Map<String, Object>>> task: tasks) {
                     if (task.getResult() != null && !task.getResult().isEmpty())
-                        hrefs.addAll(task.getResult());
+                        for (Map.Entry<String, Map<String, Object>> e: task.getResult().entrySet()) {
+                            if (!crawled.keySet().contains(e.getKey()))
+                                hrefs.put(e.getKey(), e.getValue());
+                        }
                 }
-                hrefs.removeAll(crawled.keySet());
 
                 maxProgress = hrefs.size();
                 final Collection<Task<Set<Shout>>> crawlChildrenTasks = new HashSet<>();
-                for (String href: hrefs) {
+                for (Map.Entry<String, Map<String, Object>> e: hrefs.entrySet()) {
                     TaskCompletionSource<Set<Shout>> temp = new TaskCompletionSource<>();
-                    new ParseChildThread(temp, href).start();
+                    new ParseChildThread(temp, e.getKey(), e.getValue()).start();
                     crawlChildrenTasks.add(temp.getTask());
                 }
                 Tasks.whenAll(crawlChildrenTasks).addOnSuccessListener(new OnSuccessListener<Void>() {
@@ -128,11 +136,11 @@ public abstract class AbstractModule extends Observable {
         return bitmap;
     }
 
-    protected abstract String getURL(String city, LocalDate date);
+    protected abstract Map<String, Map<String, Object>> getParentURLs(String city);
 
-    protected abstract Set<String> parseChildURLs(String url) throws IOException;
+    protected abstract Map<String, Map<String, Object>> parseChildURLs(String url, Map<String, Object> params) throws IOException;
 
-    protected abstract Set<Shout> parseShouts(String url) throws IOException, JSONException;
+    protected abstract Set<Shout> parseShouts(String url, Map<String, Object> params) throws IOException, JSONException;
 
     private InputStream openHttpConnection(String urlString) throws IOException {
         InputStream in = null;
@@ -161,19 +169,21 @@ public abstract class AbstractModule extends Observable {
     }
 
     private class ParseChildURLsThread extends Thread {
-        TaskCompletionSource<Set<String>> tcs;
+        TaskCompletionSource<Map<String, Map<String, Object>>> tcs;
         String url;
+        Map<String, Object> params;
 
-        public ParseChildURLsThread(TaskCompletionSource<Set<String>> tcs, String url) {
+        public ParseChildURLsThread(TaskCompletionSource<Map<String, Map<String, Object>>> tcs, String url, Map<String, Object> params) {
             this.tcs = tcs;
             this.url = url;
+            this.params = params;
         }
 
         @Override
         public void run() {
-            Set<String> result = new HashSet<>();
+            Map<String, Map<String, Object>> result = new HashMap<>();
             try {
-                result = parseChildURLs(url);
+                result = parseChildURLs(url, params);
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -184,17 +194,19 @@ public abstract class AbstractModule extends Observable {
     private class ParseChildThread extends Thread {
         TaskCompletionSource<Set<Shout>> tcs;
         String url;
+        Map<String, Object> params;
 
-        ParseChildThread(TaskCompletionSource<Set<Shout>> tcs, String url) {
+        ParseChildThread(TaskCompletionSource<Set<Shout>> tcs, String url, Map<String, Object> params) {
             this.tcs = tcs;
             this.url = url;
+            this.params = params;
         }
 
         @Override
         public void run() {
             Set<Shout> result = null;
             try {
-                result = parseShouts(url);
+                result = parseShouts(url, params);
             } catch (Exception e) {
                 e.printStackTrace();
             }

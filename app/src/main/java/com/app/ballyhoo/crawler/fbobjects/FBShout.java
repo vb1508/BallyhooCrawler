@@ -45,11 +45,14 @@ public class FBShout {
         validity.put("fromDateDay", from.getDayOfMonth());
         validity.put("fromHour", from.getHourOfDay());
         validity.put("fromMinute", from.getMinuteOfHour());
-        validity.put("untilDateYear", until.getYear());
-        validity.put("untilDateMonth", until.getMonthOfYear());
-        validity.put("untilDateDay", until.getDayOfMonth());
-        validity.put("untilHour", until.getHourOfDay());
-        validity.put("untilMinute", until.getMinuteOfHour());
+
+        if (until != null) {
+            validity.put("untilDateYear", until.getYear());
+            validity.put("untilDateMonth", until.getMonthOfYear());
+            validity.put("untilDateDay", until.getDayOfMonth());
+            validity.put("untilHour", until.getHourOfDay());
+            validity.put("untilMinute", until.getMinuteOfHour());
+        }
 
         this.imgNames = new HashMap<>();
         for (int i = 0; i < imgNames.size(); i++)

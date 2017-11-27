@@ -7,6 +7,7 @@ import android.support.annotation.NonNull;
 import com.app.ballyhoo.crawler.dbconnector.DBManager;
 import com.app.ballyhoo.crawler.modules.AbstractModule;
 import com.app.ballyhoo.crawler.modules.KACityModule;
+import com.app.ballyhoo.crawler.modules.KANightlifeModule;
 import com.app.ballyhoo.crawler.modules.KarlsruheDEModule;
 import com.app.ballyhoo.crawler.modules.VirtualNightsModule;
 import com.google.android.gms.tasks.OnCompleteListener;
@@ -52,6 +53,7 @@ public class ModulesManager extends Thread implements Observer {
         modules.add(new KarlsruheDEModule(context));
         modules.add(new VirtualNightsModule(context));
         modules.add(new KACityModule(context));
+        modules.add(new KANightlifeModule(context));
 
         for (AbstractModule module: modules)
             module.addObserver(this);
@@ -62,12 +64,9 @@ public class ModulesManager extends Thread implements Observer {
         dbManager.init().addOnSuccessListener(new OnSuccessListener<Map<String, Integer>>() {
             @Override
             public void onSuccess(final Map<String, Integer> crawled) {
-                final LocalDate startDate = LocalDate.now();
-                final LocalDate endDate = startDate.plusDays(0);
-
                 final Collection<Task<Map<LocalDate, Set<Shout>>>> tasks = new HashSet<>();
                 for (AbstractModule module: modules) {
-                    tasks.add(module.parseHelper("karlsruhe", startDate, endDate, crawled));
+                    tasks.add(module.parseHelper("karlsruhe", crawled));
                 }
 
                 Tasks.whenAll(tasks).addOnSuccessListener(new OnSuccessListener<Void>() {

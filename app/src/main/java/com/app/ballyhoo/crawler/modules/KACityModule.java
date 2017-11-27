@@ -3,6 +3,7 @@ package com.app.ballyhoo.crawler.modules;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.location.Address;
+import android.util.Pair;
 
 import com.app.ballyhoo.crawler.main.Shout;
 import com.app.ballyhoo.crawler.main.Util;
@@ -19,8 +20,10 @@ import org.jsoup.select.Elements;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -31,18 +34,24 @@ public class KACityModule extends AbstractModule {
     private final String URL = "http://www.ka-city.de/";
 
     public KACityModule(Context context) {
-        super(context, "KAcity");
+        super(context, "KAcity", LocalDate.now(), LocalDate.now());
     }
 
     @Override
-    protected String getURL(String city, LocalDate date) {
-        return URL + "dinner-lounge/mittagstisch/mittagstisch-uebersicht/cal/"
-                + date.getYear() + "/" + date.getMonthOfYear() + "/" + date.getDayOfMonth();
+    protected Map<String, Map<String, Object>> getParentURLs(String city) {
+        Map<String, Map<String, Object>> result = new HashMap<>();
+        for (LocalDate date = startDate; !date.isAfter(endDate); date = date.plusDays(1)) {
+            Map<String, Object> params = new HashMap<>();
+            String url = URL + "dinner-lounge/mittagstisch/mittagstisch-uebersicht/cal/"
+                    + date.getYear() + "/" + date.getMonthOfYear() + "/" + date.getDayOfMonth();
+            result.put(url, params);
+        }
+        return result;
     }
 
     @Override
-    protected Set<String> parseChildURLs(String url) throws IOException {
-        Set<String> result = new HashSet<>();
+    protected Map<String, Map<String, Object>> parseChildURLs(String url, Map<String, Object> params) throws IOException {
+        Map<String, Map<String, Object>> result = new HashMap<>();
         Document doc = Jsoup.connect(url).get();
 
         String[] temp = url.split("/");
@@ -53,13 +62,13 @@ public class KACityModule extends AbstractModule {
 
         for (Element element: listings) {
             Element href = element.getElementsByAttribute("href").get(0);
-            result.add(URL + href.attr("href") + suffix);
+            result.put(URL + href.attr("href") + suffix, params);
         }
         return result;
     }
 
     @Override
-    protected Set<Shout> parseShouts(String url) throws IOException, JSONException {
+    protected Set<Shout> parseShouts(String url, Map<String, Object> params) throws IOException, JSONException {
         Document doc = Jsoup.connect(url).get();
         Set<Util.ShoutCategory> categories = new HashSet<>();
         categories.add(Util.ShoutCategory.FOOD);

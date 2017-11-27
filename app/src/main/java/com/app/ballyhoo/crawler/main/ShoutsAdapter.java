@@ -66,7 +66,8 @@ public class ShoutsAdapter extends RecyclerView.Adapter<ShoutsAdapter.ShoutsView
             time.setText(shout.getStartDate() + " " + shout.getEndDate());
             title.setText(shout.getTitle());
             description.setText(shout.getMessage());
-            image.setImageDrawable(new BitmapDrawable(itemView.getContext().getResources(), shout.getImages().get(0)));
+            if (!shout.getImages().isEmpty())
+                image.setImageDrawable(new BitmapDrawable(itemView.getContext().getResources(), shout.getImages().get(0)));
             location.setText(shout.getAddress().getLatitude() + " " + shout.getAddress().getLongitude());
         }
     }

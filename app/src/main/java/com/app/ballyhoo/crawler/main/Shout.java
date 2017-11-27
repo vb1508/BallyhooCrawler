@@ -37,15 +37,15 @@ public class Shout {
 
         this.categories = categories;
         this.startDate = startDate;
-        if (endDate == null) {
-            this.endDate = new LocalDateTime(startDate.getYear(), startDate.getMonthOfYear(), startDate.getDayOfMonth(), 0, 0);
-            if (!this.endDate.isAfter(startDate))
-                this.endDate = this.endDate.plusDays(1);
-        } else
-            this.endDate = endDate;
+        //if (endDate == null) {
+        //    this.endDate = new LocalDateTime(startDate.getYear(), startDate.getMonthOfYear(), startDate.getDayOfMonth(), 0, 0);
+        //    if (!this.endDate.isAfter(startDate))
+        //        this.endDate = this.endDate.plusDays(1);
+        //} else
+        this.endDate = endDate;
         this.address = address;
-        this.title = Util.clean(title);
-        this.message = Util.clean(message);
+        this.title = title;
+        this.message = message;
         this.images = images;
 
         this.id = generateId();
@@ -104,8 +104,8 @@ public class Shout {
     }
 
     public boolean isValid() {
-        return (url != null && categories != null && startDate != null && endDate != null
-                && address != null && title != null && message != null && images != null);
+        return (url != null && categories != null && startDate != null && address != null
+                && title != null && message != null && images != null);
     }
 
     @Override
@@ -119,7 +119,10 @@ public class Shout {
     }
 
     int generateId() {
-        return startDate.hashCode() + endDate.hashCode() +
+        int result = startDate.hashCode() +
                 ((Double) address.getLatitude()).hashCode() + ((Double) address.getLongitude()).hashCode();
+        if (endDate != null)
+            result += endDate.hashCode();
+        return result;
     }
 }

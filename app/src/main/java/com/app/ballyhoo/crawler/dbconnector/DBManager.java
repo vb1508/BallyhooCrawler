@@ -86,7 +86,7 @@ public class DBManager {
         LocalDateTime until = shout.getEndDate();
 
         if (categories != null && !categories.isEmpty() && title != null && message != null
-                && images != null && address != null && from != null && until != null) {
+                && images != null && address != null && from != null) {
 
             DatabaseReference dbRef = FirebaseDatabase.getInstance().getReference();
 
