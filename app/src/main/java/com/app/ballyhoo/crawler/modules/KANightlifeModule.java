@@ -79,7 +79,7 @@ public class KANightlifeModule extends AbstractModule {
             } else
                 categories.add(Util.ShoutCategory.NIGHTLIFE);
 
-            String addressStr = timeAndLocationElement.child(1).child(1).text();
+            String addressStr = timeAndLocationElement.child(1).child(1).ownText();
             Address address = parseLocationFromAddress(addressStr);
             String message = list.select("td[height=100%][valign=top]").get(0).getElementsByTag("font").get(0).html();
 
