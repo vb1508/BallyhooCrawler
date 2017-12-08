@@ -44,7 +44,7 @@ import java.util.UUID;
 
 public class DBManager {
     private final String CRAWLER_DBREF = "crawled";
-    private final String PROFILES_DBREF = "user_profiles";
+    private final String PROFILES_DBREF = "users";
     private final String SHOUTS_DBREF = "shouts";
     private final String IMAGES_DBREF = "images";
 
