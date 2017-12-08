@@ -144,7 +144,7 @@ public class DBManager {
         final Collection<Task<UploadTask.TaskSnapshot>> tasks = new HashSet<>();
         // Create a storage reference from our app
         StorageReference storageRef = FirebaseStorage.getInstance().getReferenceFromUrl("gs://ballyhoo-78262.appspot.com");
-        StorageReference imgRef = storageRef.child(IMAGES_DBREF).child(opID).child(sID);
+        StorageReference imgRef = storageRef.child(IMAGES_DBREF).child(opID).child("shouts").child(sID);
 
         for (int i = 0; i < dbs.length; i++)
             imgRef = imgRef.child(dbs[i]);
