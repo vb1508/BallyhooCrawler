@@ -20,7 +20,6 @@ public class FBShout {
     private long timestamp;
     private Util.ShoutStatus status;
     private String opID;
-    private String opName;
     private Map<String, String> imgNames;
     private String title;
     private String message;
@@ -28,12 +27,11 @@ public class FBShout {
     private Map<String, Double> location;
     private Map<String, Integer> validity;
 
-    public FBShout(long timestamp, Util.ShoutStatus status, String opID, String opName, List<String> imgNames,
+    public FBShout(long timestamp, Util.ShoutStatus status, String opID, List<String> imgNames,
                    String title, String message, Address location, LocalDateTime from, LocalDateTime until) {
         this.timestamp = timestamp;
         this.status = status;
         this.opID = opID;
-        this.opName = opName;
         this.title = title;
         this.message = message;
         this.location = new HashMap<>();
@@ -60,8 +58,6 @@ public class FBShout {
     }
 
     public Util.ShoutStatus getStatus() { return status; }
-
-    public String getOpName() { return opName; }
 
     public long getTimestamp() { return timestamp; }
 
