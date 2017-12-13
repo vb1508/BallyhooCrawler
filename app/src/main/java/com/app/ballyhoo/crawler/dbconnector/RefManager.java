@@ -16,11 +16,10 @@ class RefManager {
     static String getDateRef(LocalDate d) {
         String result = null;
         if (d != null) {
-            DateTime date = d.toDateTimeAtCurrentTime().withZone(DateTimeZone.UTC);
-            int year = date.getYear();
-            int month = date.getMonthOfYear();
-            int day = date.getDayOfMonth();
-            result = "UTC-" + year + "-" + month + "-" + day;
+            int year = d.getYear();
+            int month = d.getMonthOfYear();
+            int day = d.getDayOfMonth();
+            result = year + "-" + month + "-" + day;
         }
         return result;
     }
