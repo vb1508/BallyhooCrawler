@@ -6,10 +6,12 @@ import android.support.annotation.NonNull;
 
 import com.app.ballyhoo.crawler.dbconnector.DBManager;
 import com.app.ballyhoo.crawler.modules.AbstractModule;
+import com.app.ballyhoo.crawler.modules.FussballDEModule;
 import com.app.ballyhoo.crawler.modules.KACityModule;
 import com.app.ballyhoo.crawler.modules.KAMensaModule;
 import com.app.ballyhoo.crawler.modules.KANightlifeModule;
 import com.app.ballyhoo.crawler.modules.KarlsruheDEModule;
+import com.app.ballyhoo.crawler.modules.ViktorModul;
 import com.app.ballyhoo.crawler.modules.VirtualNightsModule;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnSuccessListener;
@@ -56,6 +58,8 @@ public class ModulesManager extends Thread implements Observer {
         modules.add(new KACityModule(context));
         modules.add(new KANightlifeModule(context));
         modules.add(new KAMensaModule(context));
+        modules.add(new FussballDEModule(context));
+        modules.add(new ViktorModul(context));
 
         for (AbstractModule module: modules)
             module.addObserver(this);
