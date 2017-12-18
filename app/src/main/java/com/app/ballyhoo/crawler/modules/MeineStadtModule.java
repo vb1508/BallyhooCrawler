@@ -52,7 +52,9 @@ public class MeineStadtModule extends AbstractModule {
     @Override
     protected Map<String, Map<String, Object>> parseChildURLs(String url, Map<String, Object> params) throws IOException {
         Map<String, Map<String, Object>> result = new HashMap<>();
-        while (true) {
+
+        boolean hasNextPage = true;
+        while (hasNextPage) {
             Document doc = Jsoup.connect(url).get();
             Elements events = doc.getElementsByAttributeValue("class", "ms-result-item ms-result-item-event ms-link-area-basin");
             for (Element event : events) {
@@ -63,8 +65,10 @@ public class MeineStadtModule extends AbstractModule {
                 result.put(link, params);
             }
             Element nextPage = doc.getElementsByAttributeValue("rel", "next").first();
-            if (nextPage == null) break;
-            url = "http://veranstaltungen.meinestadt.de" + nextPage.attr("href");
+            if (nextPage != null)
+                url = "http://veranstaltungen.meinestadt.de" + nextPage.attr("href");
+            else
+                hasNextPage = false;
         }
         return result;
     }
@@ -124,5 +128,10 @@ public class MeineStadtModule extends AbstractModule {
 
 
         return result;
+    }
+
+    @Override
+    protected int getMaxConnections() {
+        return 5;
     }
 }

@@ -5,10 +5,12 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.location.Address;
 import android.location.Geocoder;
+import android.support.annotation.NonNull;
 import android.util.Pair;
 
 import com.app.ballyhoo.crawler.main.Shout;
 import com.app.ballyhoo.crawler.main.Util;
+import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
@@ -23,13 +25,16 @@ import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Observable;
+import java.util.Queue;
 import java.util.Set;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
  * Created by Viet Kong on 19.11.2017.
@@ -63,11 +68,15 @@ public abstract class AbstractModule extends Observable {
         final Collection<Task<Map<String, Map<String, Object>>>> tasks = new HashSet<>();
 
         Map<String, Map<String, Object>> parentUrls = getParentURLs(city);
+        Queue<ParseThread> queue = new ConcurrentLinkedQueue<>();
+
         for (Map.Entry<String, Map<String, Object>> e: parentUrls.entrySet()) {
             TaskCompletionSource<Map<String, Map<String, Object>>> temp = new TaskCompletionSource<>();
-            new ParseChildURLsThread(temp, e.getKey(), e.getValue()).start();
+            queue.add(new ParseChildURLsThread(temp, e.getKey(), e.getValue()));
             tasks.add(temp.getTask());
         }
+
+        queueHelper(queue);
 
         Tasks.whenAll(tasks).addOnSuccessListener(new OnSuccessListener<Void>() {
             @Override
@@ -83,11 +92,14 @@ public abstract class AbstractModule extends Observable {
 
                 maxProgress = hrefs.size();
                 final Collection<Task<Set<Shout>>> crawlChildrenTasks = new HashSet<>();
+
+                Queue<ParseThread> queue = new ConcurrentLinkedQueue<>();
                 for (Map.Entry<String, Map<String, Object>> e: hrefs.entrySet()) {
                     TaskCompletionSource<Set<Shout>> temp = new TaskCompletionSource<>();
-                    new ParseChildThread(temp, e.getKey(), e.getValue()).start();
+                    queue.add(new ParseChildThread(temp, e.getKey(), e.getValue()));
                     crawlChildrenTasks.add(temp.getTask());
                 }
+                queueHelper(queue);
                 Tasks.whenAll(crawlChildrenTasks).addOnSuccessListener(new OnSuccessListener<Void>() {
                     @Override
                     public void onSuccess(Void aVoid) {
@@ -142,6 +154,10 @@ public abstract class AbstractModule extends Observable {
 
     protected abstract Set<Shout> parseShouts(String url, Map<String, Object> params) throws IOException, JSONException;
 
+    protected int getMaxConnections() {
+        return 10;
+    }
+
     private InputStream openHttpConnection(String urlString) throws IOException {
         InputStream in = null;
         int response;
@@ -168,12 +184,15 @@ public abstract class AbstractModule extends Observable {
         return in;
     }
 
-    private class ParseChildURLsThread extends Thread {
-        TaskCompletionSource<Map<String, Map<String, Object>>> tcs;
+    private abstract class ParseThread extends Thread {
+        TaskCompletionSource tcs;
+    }
+
+    private class ParseChildURLsThread extends ParseThread {
         String url;
         Map<String, Object> params;
 
-        public ParseChildURLsThread(TaskCompletionSource<Map<String, Map<String, Object>>> tcs, String url, Map<String, Object> params) {
+        ParseChildURLsThread(TaskCompletionSource<Map<String, Map<String, Object>>> tcs, String url, Map<String, Object> params) {
             this.tcs = tcs;
             this.url = url;
             this.params = params;
@@ -191,8 +210,7 @@ public abstract class AbstractModule extends Observable {
         }
     }
 
-    private class ParseChildThread extends Thread {
-        TaskCompletionSource<Set<Shout>> tcs;
+    private class ParseChildThread extends ParseThread {
         String url;
         Map<String, Object> params;
 
@@ -216,5 +234,21 @@ public abstract class AbstractModule extends Observable {
 
             tcs.setResult(result);
         }
+    }
+
+    private void queueHelper(final Queue<ParseThread> queue) {
+        Collection<Task<?>> tasks = new ArrayList<>();
+        for (int i = 0; i < getMaxConnections() && !queue.isEmpty(); i++) {
+            ParseThread thread = queue.poll();
+            tasks.add(thread.tcs.getTask());
+            thread.start();
+        }
+
+        Tasks.whenAll(tasks).addOnCompleteListener(new OnCompleteListener<Void>() {
+            @Override
+            public void onComplete(@NonNull Task<Void> task) {
+                queueHelper(queue);
+            }
+        });
     }
 }
