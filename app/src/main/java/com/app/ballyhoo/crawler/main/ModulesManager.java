@@ -11,6 +11,7 @@ import com.app.ballyhoo.crawler.modules.KACityModule;
 import com.app.ballyhoo.crawler.modules.KAMensaModule;
 import com.app.ballyhoo.crawler.modules.KANightlifeModule;
 import com.app.ballyhoo.crawler.modules.KarlsruheDEModule;
+import com.app.ballyhoo.crawler.modules.MeineStadtModule;
 import com.app.ballyhoo.crawler.modules.ViktorModul;
 import com.app.ballyhoo.crawler.modules.VirtualNightsModule;
 import com.google.android.gms.tasks.OnCompleteListener;
@@ -53,13 +54,14 @@ public class ModulesManager extends Thread implements Observer {
         dbManager = new DBManager();
 
         modules = new HashSet<>();
-        modules.add(new KarlsruheDEModule(context));
-        modules.add(new VirtualNightsModule(context));
-        modules.add(new KACityModule(context));
-        modules.add(new KANightlifeModule(context));
-        modules.add(new KAMensaModule(context));
-        modules.add(new FussballDEModule(context));
-        modules.add(new ViktorModul(context));
+        //modules.add(new KarlsruheDEModule(context));
+        //modules.add(new VirtualNightsModule(context));
+        //modules.add(new KACityModule(context));
+        //modules.add(new KANightlifeModule(context));
+        //modules.add(new KAMensaModule(context));
+        //modules.add(new FussballDEModule(context));
+        //modules.add(new ViktorModul(context));
+        modules.add(new MeineStadtModule(context));
 
         for (AbstractModule module: modules)
             module.addObserver(this);

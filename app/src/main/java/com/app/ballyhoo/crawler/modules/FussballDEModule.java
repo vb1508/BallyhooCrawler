@@ -37,7 +37,7 @@ public class FussballDEModule extends AbstractModule {
     private final String URL = "http://www.fussball.de/spieltagsuebersicht/3liga-deutschland-3-liga-herren-saison1718-deutschland/-/staffel/01VM7AUE1K000000VS54898EVSV90M3P-G#!/section/mediastream";
 
     public FussballDEModule(Context context) {
-        super(context, "FussballDEModule", LocalDate.now(), LocalDate.now().plusDays(7));
+        super(context, "FussballDE", LocalDate.now(), LocalDate.now().plusDays(7));
     }
 
     @Override
@@ -90,7 +90,7 @@ public class FussballDEModule extends AbstractModule {
         //Element gast2 = gast.getElementsByAttribute("edGastmannschaftName").first();
         String gastmannschaft = datasheet_string.substring(datasheet_string.lastIndexOf("edGastmannschaftName='") + "edGastmannschaftName='".length(),datasheet_string.indexOf("';\n" + "edGebiet="));
         String heimmannschaft = datasheet_string.substring(datasheet_string.lastIndexOf("edHeimmannschaftName='")+ "edHeimmannschaftName='".length(),datasheet_string.indexOf("';\n" + "edMandant='"));
-        String liga = datasheet_string.substring(datasheet_string.lastIndexOf("edSpielklasseName='"+"edSpielklasseName='".length()),datasheet_string.indexOf("';\n" + "edSpielklasseTypId='"));
+        String liga = datasheet_string.substring(datasheet_string.lastIndexOf("edSpielklasseName='")+"edSpielklasseName='".length(),datasheet_string.indexOf("';\n" + "edSpielklasseTypId='"));
 
         String shoutTitle = liga + " " + heimmannschaft + " gegen " + gastmannschaft;
         String shoutMessage = heimmannschaft + " gegen " + gastmannschaft;
