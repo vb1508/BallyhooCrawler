@@ -112,6 +112,9 @@ public class DBManager {
             for (Util.ShoutCategory category : categories) {
                 tasks.add(sRef.child("data").child("categories").push().setValue(category));
             }
+
+            for (String hashtag: shout.getHashtags())
+                tasks.add(sRef.child("data").child("hashtags").push().setValue(hashtag));
             tasks.add(setGeofireRef(dateRef.child("geo"), sID, address.getLatitude(), address.getLongitude()));
 
             DatabaseReference crawlerRef = dbRef.child(CRAWLER_DBREF).child(shout.getModule().getModuleName()).push();

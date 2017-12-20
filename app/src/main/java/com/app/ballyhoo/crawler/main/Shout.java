@@ -134,6 +134,10 @@ public class Shout {
         return result;
     }
 
+    public Set<String> getHashtags() {
+        return hashtags;
+    }
+
     private void parseHashtags() {
         hashtags = new HashSet<>();
         Pattern MY_PATTERN = Pattern.compile("#(\\S+)");
