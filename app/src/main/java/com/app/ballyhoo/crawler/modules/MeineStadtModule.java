@@ -113,7 +113,7 @@ public class MeineStadtModule extends AbstractModule {
 
         String shoutMessage = "";
         Set<Util.ShoutCategory> categories = new HashSet<>();
-        categories.add(Util.ShoutCategory.OTHER);
+        categories.add(Util.ShoutCategory.SOCIAL);
 
         List<Bitmap> images = new ArrayList<>();
 

@@ -9,7 +9,7 @@ import org.jsoup.safety.Whitelist;
  */
 
 public class Util {
-    public enum ShoutCategory {NIGHTLIFE, FOOD, EVENTS, SOCIAL, SHOPPING, SIGHTSEEING, OTHER}
+    public enum ShoutCategory {NIGHTLIFE, FOOD, EVENTS, SOCIAL, SHOPPING, SMALLTALK}
     public enum ShoutStatus {ACTIVE, DEACTIVATED}
     public enum ShoutType {PERMANENT, LOCAL, AD}
 
