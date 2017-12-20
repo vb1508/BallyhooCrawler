@@ -143,8 +143,8 @@ public class Shout {
         Pattern MY_PATTERN = Pattern.compile("#([A-Za-z0-9_-]+)");
         Matcher mat = MY_PATTERN.matcher(message);
         while (mat.find()) {
-            //System.out.println(mat.group(1));
-            hashtags.add(mat.group(1));
+            String hashtag = mat.group(0);
+            hashtags.add(hashtag.substring(1, hashtag.length()));
         }
     }
 }
