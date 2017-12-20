@@ -54,14 +54,14 @@ public class ModulesManager extends Thread implements Observer {
         dbManager = new DBManager();
 
         modules = new HashSet<>();
-        //modules.add(new KarlsruheDEModule(context));
-        //modules.add(new VirtualNightsModule(context));
-        //modules.add(new KACityModule(context));
-        //modules.add(new KANightlifeModule(context));
-        //modules.add(new KAMensaModule(context));
-        //modules.add(new FussballDEModule(context));
-        //modules.add(new ViktorModul(context));
-        modules.add(new MeineStadtModule(context));
+//        modules.add(new KarlsruheDEModule(context));
+        modules.add(new VirtualNightsModule(context));
+//        modules.add(new KACityModule(context));
+//        modules.add(new KANightlifeModule(context));
+//        modules.add(new KAMensaModule(context));
+//        modules.add(new FussballDEModule(context));
+//        modules.add(new ViktorModul(context));
+        //modules.add(new MeineStadtModule(context));
 
         for (AbstractModule module: modules)
             module.addObserver(this);

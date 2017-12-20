@@ -85,7 +85,8 @@ public class VirtualNightsModule extends AbstractModule {
         String message = doc.getElementsByAttributeValue("class", "event-description").html();
 
         Set<Shout> result = new HashSet<>();
-        result.add(new Shout(url, VirtualNightsModule.this, categories, title, message, startDate, endDate, address, images));
+        Set<String> hashtags = new HashSet<>();
+        result.add(new Shout(url, VirtualNightsModule.this, categories, title, message, hashtags, startDate, endDate, address, images));
         return result;
     }
 }

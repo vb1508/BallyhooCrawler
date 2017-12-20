@@ -99,7 +99,8 @@ public class FussballDEModule extends AbstractModule {
 
         List<Bitmap> images = new ArrayList<>();
 
-        Shout shout = new Shout(url, this, categories, shoutTitle, shoutMessage, startTime, null, address, images);
+        Set<String> hashtags = new HashSet<>();
+        Shout shout = new Shout(url, this, categories, shoutTitle, shoutMessage, hashtags, startTime, null, address, images);
         result.add(shout);
 
         return result;

@@ -93,7 +93,8 @@ public class KACityModule extends AbstractModule {
         images.add(image);
 
         Set<Shout> result = new HashSet<>();
-        result.add(new Shout(url, this, categories, title, message, startDate, null, address, images));
+        Set<String> hashtags = new HashSet<>();
+        result.add(new Shout(url, this, categories, title, message, hashtags, startDate, null, address, images));
         return result;
     }
 }

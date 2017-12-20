@@ -152,7 +152,7 @@ public class DBManager {
             images.get(i).compress(Bitmap.CompressFormat.JPEG, 100, baos);
             byte[] data = baos.toByteArray();
 
-            tasks.add(imgRef.child(imgNames.get(i)).putBytes(data));
+            tasks.add(imgRef.child(String.valueOf(i)).child(imgNames.get(i)).putBytes(data));
         }
 
         Tasks.whenAll(tasks).addOnCompleteListener(new OnCompleteListener<Void>() {

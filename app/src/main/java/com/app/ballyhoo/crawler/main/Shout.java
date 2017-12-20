@@ -9,9 +9,13 @@ import org.joda.time.DateTime;
 import org.joda.time.LocalDate;
 import org.joda.time.LocalDateTime;
 
+import java.util.Collection;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Created by Viet on 20.11.2017.
@@ -30,8 +34,9 @@ public class Shout {
     private String message;
     private List<String> imgNames;
     private List<Bitmap> images;
+    private Set<String> hashtags;
 
-    public Shout(String url, AbstractModule module, Set<Util.ShoutCategory> categories, String title, String message, LocalDateTime startDate, LocalDateTime endDate, Address address, List<Bitmap> images) {
+    public Shout(String url, AbstractModule module, Set<Util.ShoutCategory> categories, String title, String message, Collection<String> hashtags, LocalDateTime startDate, LocalDateTime endDate, Address address, List<Bitmap> images) {
         this.url = url;
         this.module = module;
 
@@ -49,10 +54,13 @@ public class Shout {
         this.images = images;
 
         this.id = generateId();
+
+        parseHashtags();
+        this.hashtags.addAll(hashtags);
     }
 
-    public Shout(String url, AbstractModule module, Set<Util.ShoutCategory> categories, String title, String message, DateTime startDate, DateTime endDate, Address address, List<Bitmap> images) {
-        this(url, module, categories, title, message, startDate.toLocalDateTime(), endDate.toLocalDateTime(), address, images);
+    public Shout(String url, AbstractModule module, Set<Util.ShoutCategory> categories, String title, String message, Collection<String> hashtags, DateTime startDate, DateTime endDate, Address address, List<Bitmap> images) {
+        this(url, module, categories, title, message, hashtags, startDate.toLocalDateTime(), endDate.toLocalDateTime(), address, images);
     }
 
     public int getId() { return id; }
@@ -124,5 +132,15 @@ public class Shout {
         if (endDate != null)
             result += endDate.hashCode();
         return result;
+    }
+
+    private void parseHashtags() {
+        hashtags = new HashSet<>();
+        Pattern MY_PATTERN = Pattern.compile("#(\\S+)");
+        Matcher mat = MY_PATTERN.matcher(message);
+        while (mat.find()) {
+            //System.out.println(mat.group(1));
+            hashtags.add(mat.group(1));
+        }
     }
 }

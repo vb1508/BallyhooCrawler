@@ -115,7 +115,8 @@ public class KarlsruheDEModule extends AbstractModule {
         images.add(downloadImage(imgUrl));
 
         Set<Shout> result = new HashSet<>();
-        result.add(new Shout(url, this, categories, title, message, startDate, endDate, address, images));
+        Set<String> hashtags = new HashSet<>();
+        result.add(new Shout(url, this, categories, title, message, hashtags, startDate, endDate, address, images));
         return result;
     }
 }

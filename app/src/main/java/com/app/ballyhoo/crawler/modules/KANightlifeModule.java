@@ -88,7 +88,8 @@ public class KANightlifeModule extends AbstractModule {
             Bitmap image = downloadImage(URL + imgUrl);
             if (image != null)
                 images.add(image);
-            Shout shout = new Shout(url, this, categories, title, message, startDate, endDate, address, images);
+            Set<String> hashtags = new HashSet<>();
+            Shout shout = new Shout(url, this, categories, title, message, hashtags, startDate, endDate, address, images);
             result.add(shout);
         }
         return result;
