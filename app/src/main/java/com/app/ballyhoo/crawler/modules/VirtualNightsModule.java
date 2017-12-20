@@ -86,6 +86,9 @@ public class VirtualNightsModule extends AbstractModule {
 
         Set<Shout> result = new HashSet<>();
         Set<String> hashtags = new HashSet<>();
+        hashtags.add("party");
+        hashtags.add("club");
+        hashtags.add("clubbing");
         result.add(new Shout(url, VirtualNightsModule.this, categories, title, message, hashtags, startDate, endDate, address, images));
         return result;
     }
