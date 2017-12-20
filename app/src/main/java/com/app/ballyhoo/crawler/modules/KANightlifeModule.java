@@ -89,6 +89,9 @@ public class KANightlifeModule extends AbstractModule {
             if (image != null)
                 images.add(image);
             Set<String> hashtags = new HashSet<>();
+            hashtags.add("party");
+            hashtags.add("club");
+            hashtags.add("clubing");
             Shout shout = new Shout(url, this, categories, title, message, hashtags, startDate, endDate, address, images);
             result.add(shout);
         }
