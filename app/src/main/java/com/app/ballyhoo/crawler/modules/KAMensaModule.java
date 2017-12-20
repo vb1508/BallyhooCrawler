@@ -16,6 +16,7 @@ import org.json.JSONException;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -33,7 +34,7 @@ public class KAMensaModule extends AbstractModule {
     private final String URL = "http://www.sw-ka.de/de/essen/";
 
     public KAMensaModule(Context context) {
-        super(context, "KAMensa", LocalDate.now(), LocalDate.now().plusWeeks(1));
+        super(context, "KAMensa", LocalDate.now().plusWeeks(0), LocalDate.now().plusWeeks(3));
     }
 
     @Override
@@ -82,12 +83,24 @@ public class KAMensaModule extends AbstractModule {
             List<Bitmap> images = new ArrayList<>();
 
             for (Element adenauerLinie: adenauerTag.child(0).children()) {
-                String linienName = adenauerLinie.getElementsByAttributeValue("class", "mensatype").first().child(0).text();
-                String linienBeschreibung = adenauerLinie.getElementsByAttributeValue("class", "mensadata").text();
-                shoutMessage += linienName + " " + linienBeschreibung;
+                Elements mensadataset = adenauerLinie.getElementsByAttributeValue("class", "mensadata");
+                int i_child = 0;
+                for (Element mensadata: mensadataset){
+                    String linienName = adenauerLinie.getElementsByAttributeValue("class", "mensatype").eq(i_child).html() + "<br>";
+                    i_child++;
+                    shoutMessage += linienName + "<br>" ;
+                    Elements mensadata1 = mensadata.getElementsByAttributeValue("class", "bg");
+                    for (Element mensad: mensadata1){
+                        String linienBeschreibung = mensad.html() + "<br />";
+                        shoutMessage += "<pre>" + linienBeschreibung + "</pre>" + "<br />";
+                    }
+                }
             }
 
             Set<String> hashtags = new HashSet<>();
+            hashtags.add("essen");
+            hashtags.add("kit");
+            hashtags.add("mensa");
             Shout shout = new Shout(url, this, categories, shoutTitle, shoutMessage, hashtags, startTime, null, address, images);
             result.add(shout);
         }

@@ -34,7 +34,7 @@ public class MeineStadtModule extends AbstractModule {
     private final String URL = "http://veranstaltungen.meinestadt.de/deutschland/alle/alle/kalender/";
 
     public MeineStadtModule(Context context) {
-        super(context, "MeineStadt", LocalDate.now(), LocalDate.now().plusDays(0));
+        super(context, "MeineStadt", LocalDate.now().plusDays(1), LocalDate.now().plusDays(10));
     }
 
     @Override
@@ -59,7 +59,7 @@ public class MeineStadtModule extends AbstractModule {
             Elements events = doc.getElementsByAttributeValue("class", "ms-result-item ms-result-item-event ms-link-area-basin");
             for (Element event : events) {
                 //Element item = event.child(0);
-                Element item = event.getElementsByAttributeValue("class","ms-result-item-headline").first();
+                Element item = event.getElementsByAttributeValue("class", "ms-result-item-headline").first();
                 Element item1 = item.child(0);
                 String link = item1.attr("href");
                 result.put(link, params);
@@ -69,6 +69,7 @@ public class MeineStadtModule extends AbstractModule {
                 url = "http://veranstaltungen.meinestadt.de" + nextPage.attr("href");
             else
                 hasNextPage = false;
+            hasNextPage = false; // nur zum debuggen
         }
         return result;
     }
@@ -79,9 +80,9 @@ public class MeineStadtModule extends AbstractModule {
 
         Document doc = Jsoup.connect(url).get();
         Element maincontent = doc.getElementsByAttributeValue("class", "ms-mpd-maincontent").first();
-        Element maincontent2 = maincontent.child(0);
+        Element maincontent_child = maincontent.child(0);
 
-        Element element_title = maincontent2.getElementsByAttributeValue("class", "ms-headline ms-headline--h1").first();
+        Element element_title = maincontent_child.getElementsByAttributeValue("class", "ms-headline ms-headline--h1").first();
         String shoutTitle = element_title.text();
 
         Element basicmodule = maincontent.getElementsByAttributeValue("class", "ms-mpd-basicmodule-list").first();
@@ -104,28 +105,55 @@ public class MeineStadtModule extends AbstractModule {
         Elements element_time = basicmodule.getElementsByAttributeValue("name", "time");
         String timeString = element_time.first().attr("value");
 
-        String timeDateString = dateString + "." + timeString;
-
         DateTimeFormatter formatter = DateTimeFormat.forPattern("dd.MM.yyyy");
         LocalDate date = formatter.parseLocalDate(dateString);
 
-        LocalDateTime startTime = date.toLocalDateTime(new LocalTime(11, 0)); // das muss veraendert werden, so dass nicht alles um 11 anfaengt.
+        LocalTime startTime = DateTimeFormat.forPattern("HH:mm").parseLocalTime(timeString);
+        LocalDateTime startDate = date.toLocalDateTime(startTime);
 
         String shoutMessage = "";
         Set<Util.ShoutCategory> categories = new HashSet<>();
-        categories.add(Util.ShoutCategory.SOCIAL);
+
+        Element categoryContent = doc.getElementsByAttributeValue("class", "ms-infobox").first();
+        Element categoryContent_child1 = categoryContent.child(1);
+        String categoryString = categoryContent_child1.html();
+
+        boolean addShout = false;
+        if (categoryString.toLowerCase().contains("Freizeit".toLowerCase()) || categoryString.toLowerCase().contains("Sport".toLowerCase())) {
+            categories.add(Util.ShoutCategory.SOCIAL);
+            addShout = true;
+        } else if (categoryString.toLowerCase().contains("Konzerte".toLowerCase()) || categoryString.toLowerCase().contains("Musicals".toLowerCase()) || categoryString.toLowerCase().contains("Theater".toLowerCase()) || categoryString.toLowerCase().contains("Festivals".toLowerCase()) || categoryString.toLowerCase().contains("Messen".toLowerCase()) || categoryString.toLowerCase().contains("Volksfeste".toLowerCase())) {
+            categories.add(Util.ShoutCategory.EVENTS);
+            addShout = true;
+        } else if (categoryString.toLowerCase().contains("Partys".toLowerCase())) {
+            categories.add(Util.ShoutCategory.NIGHTLIFE);
+            addShout = true;
+        }
 
         List<Bitmap> images = new ArrayList<>();
+        Elements galerieElements = maincontent.getElementsByAttributeValue("class", "ms-galerie-slider-thumb");
+        for (Element galerieElement: galerieElements) {
+            String imgUrl = galerieElement.attr("src");//.getString("image").replace("\\", "");
+            imgUrl = imgUrl.replace("\\", "");
+            images.add(downloadImage(imgUrl));
 
-        //for (Element adenauerLinie: adenauerTag.child(0).children()) {
-        //    String linienName = adenauerLinie.getElementsByAttributeValue("class", "mensatype").first().child(0).text();
-        //    String linienBeschreibung = adenauerLinie.getElementsByAttributeValue("class", "mensadata").text();
-        //    shoutMessage += linienName + " " + linienBeschreibung;
-        //}
+        }
+        if (maincontent.getElementsByAttributeValue("class", "ms-field-value").first() != null) {
+            if( addShout) {
+                String linienName = maincontent.getElementsByAttributeValue("class", "ms-field-value").first().html();
+                shoutMessage += linienName;
+            }
+        }else{
+            addShout = false;
+        }
 
         Set<String> hashtags = new HashSet<>();
-        Shout shout = new Shout(url, this, categories, shoutTitle, shoutMessage, hashtags, startTime, null, address, images);
-        result.add(shout);
+        //hashtags.add("string")
+        Shout shout = new Shout(url, this, categories, shoutTitle, shoutMessage, hashtags, startDate, null, address, images);
+
+        if (addShout) { // nur shouts mit beschreibung sollen erstellt werden
+            result.add(shout);
+        }
 
 
         return result;
