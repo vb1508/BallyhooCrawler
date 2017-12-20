@@ -7,15 +7,17 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.view.View;
+import android.widget.Toast;
 
 import com.app.ballyhoo.crawler.R;
+import com.app.ballyhoo.crawler.dbconnector.DBManager;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
 
 public class MainActivity extends AppCompatActivity {
     private ProgressDialog progressDialog;
-    private FloatingActionButton fab;
+    private FloatingActionButton fab, delete;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -31,7 +33,9 @@ public class MainActivity extends AppCompatActivity {
         rv.setAdapter(adapter);
 
         fab = findViewById(R.id.fab);
+        delete = findViewById(R.id.delete);
         fab.setEnabled(false);
+        delete.setEnabled(false);
 
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -47,6 +51,26 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        delete.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                progressDialog.setProgress(0);
+                progressDialog.setMax(1);
+                progressDialog.setMessage("Löscht...");
+                progressDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
+                progressDialog.show();
+
+                DBManager manager = new DBManager();
+                manager.deleteAll().addOnSuccessListener(new OnSuccessListener<Void>() {
+                    @Override
+                    public void onSuccess(Void aVoid) {
+                        progressDialog.hide();
+                        Toast.makeText(MainActivity.this, "Alles gelöscht!", Toast.LENGTH_LONG).show();
+                    }
+                });
+            }
+        });
+
         login();
     }
 
@@ -56,6 +80,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onSuccess(AuthResult authResult) {
                 fab.setEnabled(true);
+                delete.setEnabled(true);
             }
         });
     }

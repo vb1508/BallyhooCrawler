@@ -13,6 +13,7 @@ import com.app.ballyhoo.crawler.main.Util;
 import com.firebase.geofire.GeoFire;
 import com.firebase.geofire.GeoLocation;
 import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
@@ -158,6 +159,27 @@ public class DBManager {
             @Override
             public void onComplete(@NonNull Task<Void> task) {
                 tcs.setResult(task.getResult());
+            }
+        });
+        return tcs.getTask();
+    }
+
+    public Task<Void> deleteAll() {
+        final TaskCompletionSource<Void> tcs = new TaskCompletionSource<>();
+        Collection<Task<?>> tasks = new ArrayList<>();
+
+        DatabaseReference root = FirebaseDatabase.getInstance().getReference();
+        tasks.add(root.setValue(null));
+
+        Tasks.whenAll(tasks).addOnSuccessListener(new OnSuccessListener<Void>() {
+            @Override
+            public void onSuccess(Void aVoid) {
+                tcs.setResult(aVoid);
+            }
+        }).addOnFailureListener(new OnFailureListener() {
+            @Override
+            public void onFailure(@NonNull Exception e) {
+                tcs.setException(e);
             }
         });
         return tcs.getTask();
