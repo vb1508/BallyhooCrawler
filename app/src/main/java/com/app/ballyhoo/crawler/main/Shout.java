@@ -140,7 +140,7 @@ public class Shout {
 
     private void parseHashtags() {
         hashtags = new HashSet<>();
-        Pattern MY_PATTERN = Pattern.compile("#(\\S+)");
+        Pattern MY_PATTERN = Pattern.compile("#([A-Za-z0-9_-]+)");
         Matcher mat = MY_PATTERN.matcher(message);
         while (mat.find()) {
             //System.out.println(mat.group(1));
