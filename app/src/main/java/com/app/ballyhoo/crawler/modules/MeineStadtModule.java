@@ -69,7 +69,7 @@ public class MeineStadtModule extends AbstractModule {
                 url = "http://veranstaltungen.meinestadt.de" + nextPage.attr("href");
             else
                 hasNextPage = false;
-            hasNextPage = false; // nur zum debuggen
+            //hasNextPage = false; // nur zum debuggen
         }
         return result;
     }
@@ -119,14 +119,19 @@ public class MeineStadtModule extends AbstractModule {
         String categoryString = categoryContent_child1.html();
 
         boolean addShout = false;
+        Set<String> hashtags = new HashSet<>();
+
         if (categoryString.toLowerCase().contains("Freizeit".toLowerCase()) || categoryString.toLowerCase().contains("Sport".toLowerCase())) {
             categories.add(Util.ShoutCategory.SOCIAL);
+            hashtags.add("freizeit");
             addShout = true;
         } else if (categoryString.toLowerCase().contains("Konzerte".toLowerCase()) || categoryString.toLowerCase().contains("Musicals".toLowerCase()) || categoryString.toLowerCase().contains("Theater".toLowerCase()) || categoryString.toLowerCase().contains("Festivals".toLowerCase()) || categoryString.toLowerCase().contains("Messen".toLowerCase()) || categoryString.toLowerCase().contains("Volksfeste".toLowerCase())) {
             categories.add(Util.ShoutCategory.EVENTS);
+            hashtags.add("events");
             addShout = true;
         } else if (categoryString.toLowerCase().contains("Partys".toLowerCase())) {
             categories.add(Util.ShoutCategory.NIGHTLIFE);
+            hashtags.add("nightlife");
             addShout = true;
         }
 
@@ -135,7 +140,9 @@ public class MeineStadtModule extends AbstractModule {
         for (Element galerieElement: galerieElements) {
             String imgUrl = galerieElement.attr("src");//.getString("image").replace("\\", "");
             imgUrl = imgUrl.replace("\\", "");
-            images.add(downloadImage(imgUrl));
+            if(imgUrl.length() > 10) {
+                images.add(downloadImage(imgUrl));
+            }
 
         }
         if (maincontent.getElementsByAttributeValue("class", "ms-field-value").first() != null) {
@@ -147,8 +154,7 @@ public class MeineStadtModule extends AbstractModule {
             addShout = false;
         }
 
-        Set<String> hashtags = new HashSet<>();
-        //hashtags.add("string")
+
         Shout shout = new Shout(url, this, categories, shoutTitle, shoutMessage, hashtags, startDate, null, address, images);
 
         if (addShout) { // nur shouts mit beschreibung sollen erstellt werden

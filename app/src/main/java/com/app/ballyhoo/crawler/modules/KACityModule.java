@@ -94,6 +94,8 @@ public class KACityModule extends AbstractModule {
 
         Set<Shout> result = new HashSet<>();
         Set<String> hashtags = new HashSet<>();
+        hashtags.add("essen");
+        hashtags.add("mittagskarte");
         result.add(new Shout(url, this, categories, title, message, hashtags, startDate, null, address, images));
         return result;
     }

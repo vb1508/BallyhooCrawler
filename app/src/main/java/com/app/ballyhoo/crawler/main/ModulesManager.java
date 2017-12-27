@@ -7,13 +7,16 @@ import android.support.annotation.NonNull;
 import com.app.ballyhoo.crawler.dbconnector.DBManager;
 import com.app.ballyhoo.crawler.modules.AbstractModule;
 import com.app.ballyhoo.crawler.modules.BadischesBrauhausModule;
+import com.app.ballyhoo.crawler.modules.BadnerhalleDEModule;
 import com.app.ballyhoo.crawler.modules.FussballDEModule;
 import com.app.ballyhoo.crawler.modules.KACityModule;
 import com.app.ballyhoo.crawler.modules.KAMensaModule;
 import com.app.ballyhoo.crawler.modules.KANightlifeModule;
 import com.app.ballyhoo.crawler.modules.KarlsruheDEModule;
+import com.app.ballyhoo.crawler.modules.LIVE1Module;
 import com.app.ballyhoo.crawler.modules.MeineStadtModule;
 import com.app.ballyhoo.crawler.modules.SWR3Module;
+import com.app.ballyhoo.crawler.modules.StoevchenModule;
 import com.app.ballyhoo.crawler.modules.ViktorModul;
 import com.app.ballyhoo.crawler.modules.VirtualNightsModule;
 import com.google.android.gms.tasks.OnCompleteListener;
@@ -58,14 +61,17 @@ public class ModulesManager extends Thread implements Observer {
         modules = new HashSet<>();
 //        modules.add(new KarlsruheDEModule(context));
         //modules.add(new VirtualNightsModule(context));
-//        modules.add(new KACityModule(context));
-//        modules.add(new KANightlifeModule(context));\
+        //modules.add(new KACityModule(context));
+//        modules.add(new KANightlifeModule(context));
 //        modules.add(new KAMensaModule(context));
 //        modules.add(new FussballDEModule(context));
 //        modules.add(new ViktorModul(context));
         //modules.add(new MeineStadtModule(context));
         //modules.add(new SWR3Module(context));
-        modules.add(new BadischesBrauhausModule(context));
+        //modules.add(new BadischesBrauhausModule(context));
+        //modules.add(new StoevchenModule(context));
+        //modules.add(new BadnerhalleDEModule(context));
+        modules.add(new LIVE1Module(context));
 
         for (AbstractModule module: modules)
             module.addObserver(this);
